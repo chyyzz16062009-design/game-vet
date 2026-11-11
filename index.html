@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Parrot Runner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas {
+            background: linear-gradient(to bottom, #1e293b, #0f172a);
+            border-radius: 12px;
+            image-rendering: pixelated;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 font-mono select-none">
+
+    <!-- Tiêu đề & Hướng dẫn -->
+    <div class="text-center mb-4">
+        <h1 class="text-3xl font-extrabold text-amber-400 tracking-wider flex items-center justify-center gap-2">
+            🦜 PIXEL PARROT RUNNER
+        </h1>
+        <p class="text-slate-400 text-xs mt-1">
+            Bấm <kbd class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-amber-300">Space</kbd> / <kbd class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-amber-300">▲</kbd> hoặc chạm màn hình để Chú Vẹt Vỗ Cánh Nhảy
+        </p>
+    </div>
+
+    <!-- Khung Game Canvas -->
+    <div class="relative">
+        <canvas id="gameCanvas" width="600" height="220" class="border-2 border-amber-500/30 shadow-2xl max-w-full"></canvas>
+    </div>
+
+    <!-- Bảng Điểm & Điều Khiển -->
+    <div class="mt-4 flex flex-col sm:flex-row items-center gap-6 text-sm">
+        <div class="flex gap-6 font-bold">
+            <span class="text-slate-400">ĐIỂM: <span id="scoreText" class="text-white">0</span></span>
+            <span class="text-amber-400">KỶ LỤC: <span id="highScoreText" class="text-amber-300">0</span></span>
+        </div>
+        <button onclick="restartGame()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-black px-6 py-2 rounded-lg shadow-lg active:scale-95 transition cursor-pointer">
+            CHƠI LẠI
+        </button>
+    </div>
+
+    <!-- Logic Game với Pixel Parrot -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('scoreText');
+        const highScoreText = document.getElementById('highScoreText');
+
+        // Thông số nhân vật Chú Vẹt Pixel
+        let parrot = {
+            x: 50,
+            y: 138,
+            width: 32,
+            height: 32,
+            dy: 0,
+            gravity: 0.62,
+            jumpPower: -10.5,
+            isGrounded: true,
+            wingFrame: 0
+        };
+
+        let obstacles = [];
+        let bullets = []; // Danh sách đạn nước của hà mã
+        let score = 0;
+        let highScore = localStorage.getItem('parrot_high_score') || 0;
+        let gameOver = false;
+        let gameOverCause = ''; // Lý do thua ('hippo', 'cactus', 'bullet')
+        let frameCount = 0;
+        let gameSpeed = 5;
+
+        highScoreText.innerText = highScore;
+
+        // Vẽ Nhân vật Vẹt Pixel Art sặc sỡ
+        function drawPixelParrot(x, y, frame) {
+            // Đuôi vẹt (Màu xanh dương & lục)
+            ctx.fillStyle = '#0284c7'; // Xanh dương
+            ctx.fillRect(x - 6, y + 14, 8, 4);
+            ctx.fillStyle = '#10b981'; // Xanh lá
+            ctx.fillRect(x - 4, y + 18, 6, 4);
+
+            // Thân Vẹt (Đỏ rực)
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(x + 8, y + 8, 16, 16); // Bụng & lưng
+            ctx.fillRect(x + 12, y + 2, 14, 12); // Đầu vẹt
+
+            // Mặt & Mắt Vẹt
+            ctx.fillStyle = '#ffffff'; // Vùng quanh mắt màu trắng
+            ctx.fillRect(x + 20, y + 4, 6, 6);
+            ctx.fillStyle = '#0f172a'; // Đồng tử mắt đen
+            ctx.fillRect(x + 23, y + 5, 2, 3);
+
+            // Mỏ Vẹt (Vàng sậm)
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(x + 26, y + 8, 6, 6);
+            ctx.fillRect(x + 26, y + 14, 4, 2);
+
+            // Cánh Vẹt (Hoạt họa vỗ cánh: Đỏ -> Vàng -> Xanh lá)
+            const isWingUp = !parrot.isGrounded ? Math.floor(frame / 6) % 2 === 0 : Math.floor(frame / 😎 % 2 === 0;
+
+            if (isWingUp) {
+                // Cánh giơ lên (Bay/Vỗ)
+                ctx.fillStyle = '#fbbf24'; // Vàng
+                ctx.fillRect(x + 6, y, 12, 6);
+                ctx.fillStyle = '#10b981'; // Xanh lá
+                ctx.fillRect(x + 8, y - 4, 10, 4);
+            } else {
+                // Cánh cụp xuống
+                ctx.fillStyle = '#fbbf24'; // Vàng
+                ctx.fillRect(x + 8, y + 12, 12, 6);
+                ctx.fillStyle = '#10b981'; // Xanh lá
+                ctx.fillRect(x + 10, y + 18, 10, 4);
+            }
+
+            // Chân Vẹt Pixel
+            ctx.fillStyle = '#d97706';
+            if (!parrot.isGrounded) {
+                // Chân co lên khi bay/nhảy
+                ctx.fillRect(x + 12, y + 24, 4, 4);
+                ctx.fillRect(x + 18, y + 24, 4, 4);
+            } else {
+                // Chân chạy trên mặt đất
+                if (frame % 10 < 5) {
+                    ctx.fillRect(x + 12, y + 24, 4, 8);
+                    ctx.fillRect(x + 18, y + 24, 4, 4);
+                } else {
+                    ctx.fillRect(x + 12, y + 24, 4, 4);
+                    ctx.fillRect(x + 18, y + 24, 4, 8);
+                }
+            }
+        }
+
+        // Vẽ Xương rồng / Vật cản Pixel
+        function drawCactus(x, y, w, h) {
+            ctx.fillStyle = '#059669'; // Xanh lá đậm
+            ctx.fillRect(x + 6, y, 8, h);
+            ctx.fillRect(x, y + 8, 20, 6);
+            ctx.fillRect(x, y + 4, 4, 8);
+            ctx.fillRect(x + 16, y + 4, 4, 8);
+        }
+
+        // Vẽ Hà Mã Pixel Art (Được mặc áo màu cam tươi sáng)
+        function drawHippo(x, y, w, h) {
+            // Thân hà mã (Tím xám)
+            ctx.fillStyle = '#6b7280';
+            ctx.fillRect(x + 4, y + 4, 28, 20); // Thân chính
+
+            // Áo màu cam tươi sáng cho hà mã
+            ctx.fillStyle = '#f97316'; // Cam rực rỡ
+            ctx.fillRect(x + 10, y + 6, 20, 16); // Thân áo
+            ctx.fillStyle = '#fdba74'; // Viền/họa tiết áo cam sáng
+            ctx.fillRect(x + 14, y + 8, 4, 12);
+
+            // Đầu & Mõm hà mã
+            ctx.fillStyle = '#6b7280';
+            ctx.fillRect(x, y + 10, 12, 12); // Mũi/mõm
+            ctx.fillStyle = '#9ca3af';
+            ctx.fillRect(x + 2, y + 12, 4, 4); // Lỗ mũi pixel
+
+            // Tai hà mã
+            ctx.fillStyle = '#4b5563';
+            ctx.fillRect(x + 20, y + 0, 4, 4);
+
+            // Mắt
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x + 12, y + 4, 4, 4);
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(x + 12, y + 5, 2, 2);
+
+            // Chân mập
+            ctx.fillStyle = '#374151';
+            ctx.fillRect(x + 6, y + 22, 6, 6);
+            ctx.fillRect(x + 22, y + 22, 6, 6);
+        }
+
+        // Vẽ Đạn Nước Pixel
+        function drawWaterBullet(x, y) {
+            ctx.fillStyle = '#38bdf8'; // Xanh nước biển sáng
+            ctx.fillRect(x, y, 10, 6);
+            ctx.fillStyle = '#60a5fa';
+            ctx.fillRect(x + 2, y + 1, 6, 4);
+            ctx.fillStyle = '#ffffff'; // Điểm sáng hạt nước
+            ctx.fillRect(x + 6, y + 2, 2, 2);
+        }
+
+        // Xử lý thao tác Nhảy / Vỗ cánh
+        function jump() {
+            if (parrot.isGrounded && !gameOver) {
+                parrot.dy = parrot.jumpPower;
+                parrot.isGrounded = false;
+            } else if (gameOver) {
+                restartGame();
+            }
+        }
+
+        // Bắt sự kiện bàn phím & chạm màn hình
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        }, { passive: false });
+
+        function spawnObstacle() {
+            const randomGap = Math.floor(Math.random() * 60);
+            const isHippo = Math.random() < 0.45; // 45% xuất hiện Hà mã
+            
+            if (isHippo) {
+                obstacles.push({
+                    type: 'hippo',
+                    x: canvas.width + randomGap,
+                    y: 144,
+                    width: 32,
+                    height: 28,
+                    hasShot: false
+                });
+            } else {
+                obstacles.push({
+                    type: 'cactus',
+                    x: canvas.width + randomGap,
+                    y: 144,
+                    width: 20,
+                    height: 28
+                });
+            }
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            frameCount++;
+            
+            // Xuất hiện vật cản ngẫu nhiên
+            if (frameCount % Math.max(45, 85 - Math.floor(score / 50)) === 0) {
+                spawnObstacle();
+            }
+
+            // Vật lý Chú Vẹt
+            parrot.dy += parrot.gravity;
+            parrot.y += parrot.dy;
+
+            if (parrot.y >= 138) {
+                parrot.y = 138;
+                parrot.dy = 0;
+                parrot.isGrounded = true;
+            }
+
+            // Tăng tốc độ game theo điểm
+            gameSpeed = 5 + Math.floor(score / 100) * 0.5;
+
+            // Xử lý di chuyển vật cản & Hà mã bắn đạn nước
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+
+                // Hà mã bắn ra đạn nước khi vào phạm vi khoảng cách
+                if (obs.type === 'hippo' && !obs.hasShot && obs.x < canvas.width - 80) {
+                    obs.hasShot = true;
+                    bullets.push({
+                        x: obs.x - 10,
+                        y: obs.y + 12,
+                        speed: gameSpeed + 3,
+                        width: 10,
+                        height: 6
+                    });
+                }
+
+                // Hitbox va chạm với vật cản
+                if (
+                    parrot.x + 4 < obs.x + obs.width &&
+                    parrot.x + parrot.width - 4 > obs.x &&
+                    parrot.y + 4 < obs.y + obs.height &&
+                    parrot.y + parrot.height > obs.y
+                ) {
+                    gameOver = true;
+                    gameOverCause = obs.type;
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('parrot_high_score', highScore);
+                        highScoreText.innerText = highScore;
+                    }
+                }
+
+                // Tăng điểm khi vượt qua vật cản
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    scoreText.innerText = score;
+                }
+            }
+
+            // Xử lý đạn nước & va chạm với vẹt
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let bullet = bullets[i];
+                bullet.x -= bullet.speed;
+
+                // Hitbox va chạm đạn nước với vẹt
+                if (
+                    parrot.x + 4 < bullet.x + bullet.width &&
+                    parrot.x + parrot.width - 4 > bullet.x &&
+                    parrot.y + 4 < bullet.y + bullet.height &&
+                    parrot.y + parrot.height > bullet.y
+                ) {
+                    gameOver = true;
+                    gameOverCause = 'bullet';
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('parrot_high_score', highScore);
+                        highScoreText.innerText = highScore;
+                    }
+                }
+
+                // Xóa đạn khi ra khỏi màn hình
+                if (bullet.x + bullet.width < 0) {
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Bầu trời đêm sinh động có sao & mây
+            ctx.fillStyle = '#38bdf8'; // Mây/sao nhạt
+            for (let i = 0; i < canvas.width; i += 90) {
+                let cloudX = (i - (frameCount * 0.5) % canvas.width + canvas.width) % canvas.width;
+                ctx.fillRect(cloudX, 30, 24, 6);
+                ctx.fillRect(cloudX + 6, 24, 12, 6);
+            }
+
+            // Vẽ Mặt đất Pixel nhiều màu tươi sáng
+            ctx.fillStyle = '#f59e0b'; // Đường gờ màu vàng cam
+            ctx.fillRect(0, 168, canvas.width, 4);
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, 172, canvas.width, 48);
+
+            // Vẽ đốm đất cuộn theo tốc độ (Nhiều màu nổi bật)
+            for (let i = 0; i < canvas.width; i += 40) {
+                let dotX = (i - (frameCount * gameSpeed) % 40 + canvas.width) % canvas.width;
+                ctx.fillStyle = '#38bdf8'; // Xanh ngọc
+                ctx.fillRect(dotX, 182, 6, 2);
+                ctx.fillStyle = '#ec4899'; // Hồng tươi
+                ctx.fillRect((dotX + 20) % canvas.width, 196, 4, 2);
+            }
+
+            // Vẽ Vẹt & Vật cản
+            drawPixelParrot(parrot.x, parrot.y, frameCount);
+            obstacles.forEach(obs => {
+                if (obs.type === 'hippo') {
+                    drawHippo(obs.x, obs.y, obs.width, obs.height);
+                } else {
+                    drawCactus(obs.x, obs.y, obs.width, obs.height);
+                }
+            });
+
+            // Vẽ đạn nước
+            bullets.forEach(b => drawWaterBullet(b.x, b.y));
+
+            // Hiển thị màn hình Game Over
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 22px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 25);
+                
+                // Cập nhật câu nói tùy theo lý do thua
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = 'bold 15px monospace';
+                if (gameOverCause === 'bullet') {
+                    ctx.fillText('💦 Đúng là con vẹt vẹt! 💦', canvas.width / 2, canvas.height / 2 + 2);
+                } else {
+                    ctx.fillText('😭 Con vẹt khổ nhất thế giới! 😭', canvas.width / 2, canvas.height / 2 + 2);
+                }
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '12px monospace';
+                ctx.fillText('Bấm Space hoặc CHƠI LẠI để giải cứu vẹt', canvas.width / 2, canvas.height / 2 + 28);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartGame() {
+            parrot.y = 138;
+            parrot.dy = 0;
+            obstacles = [];
+            bullets = [];
+            score = 0;
+            frameCount = 0;
+            gameSpeed = 5;
+            gameOver = false;
+            gameOverCause = '';
+            scoreText.innerText = '0';
+        }
+
+        // Bắt đầu vòng lặp game
+        gameLoop();
+    </script>
+</body>
+</html>
