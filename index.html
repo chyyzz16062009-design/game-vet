@@ -68,7 +68,7 @@
         let score = 0;
         let highScore = localStorage.getItem('parrot_high_score') || 0;
         let gameOver = false;
-        let gameOverCause = ''; // Lý do thua ('hippo', 'cactus', 'bullet')
+        let gameOverCause = ''; // Lý do thua ('hippo', 'cactus', 'bullet', 'cow_herd')
         let frameCount = 0;
         let gameSpeed = 5;
 
@@ -77,20 +77,20 @@
         // Vẽ Nhân vật Vẹt Pixel Art sặc sỡ
         function drawPixelParrot(x, y, frame) {
             // Đuôi vẹt (Màu xanh dương & lục)
-            ctx.fillStyle = '#0284c7'; // Xanh dương
+            ctx.fillStyle = '#0284c7';
             ctx.fillRect(x - 6, y + 14, 8, 4);
-            ctx.fillStyle = '#10b981'; // Xanh lá
+            ctx.fillStyle = '#10b981';
             ctx.fillRect(x - 4, y + 18, 6, 4);
 
             // Thân Vẹt (Đỏ rực)
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(x + 8, y + 8, 16, 16); // Bụng & lưng
-            ctx.fillRect(x + 12, y + 2, 14, 12); // Đầu vẹt
+            ctx.fillRect(x + 8, y + 8, 16, 16);
+            ctx.fillRect(x + 12, y + 2, 14, 12);
 
             // Mặt & Mắt Vẹt
-            ctx.fillStyle = '#ffffff'; // Vùng quanh mắt màu trắng
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(x + 20, y + 4, 6, 6);
-            ctx.fillStyle = '#0f172a'; // Đồng tử mắt đen
+            ctx.fillStyle = '#0f172a';
             ctx.fillRect(x + 23, y + 5, 2, 3);
 
             // Mỏ Vẹt (Vàng sậm)
@@ -99,30 +99,28 @@
             ctx.fillRect(x + 26, y + 14, 4, 2);
 
             // Cánh Vẹt (Hoạt họa vỗ cánh: Đỏ -> Vàng -> Xanh lá)
-            const isWingUp = !parrot.isGrounded ? Math.floor(frame / 6) % 2 === 0 : Math.floor(frame / 😎 % 2 === 0;
+            const isWingUp = !parrot.isGrounded ? Math.floor(frame / 6) % 2 === 0 : Math.floor(frame / 8) % 2 === 0;
 
             if (isWingUp) {
-                // Cánh giơ lên (Bay/Vỗ)
-                ctx.fillStyle = '#fbbf24'; // Vàng
+                // Cánh giơ lên
+                ctx.fillStyle = '#fbbf24';
                 ctx.fillRect(x + 6, y, 12, 6);
-                ctx.fillStyle = '#10b981'; // Xanh lá
+                ctx.fillStyle = '#10b981';
                 ctx.fillRect(x + 8, y - 4, 10, 4);
             } else {
                 // Cánh cụp xuống
-                ctx.fillStyle = '#fbbf24'; // Vàng
+                ctx.fillStyle = '#fbbf24';
                 ctx.fillRect(x + 8, y + 12, 12, 6);
-                ctx.fillStyle = '#10b981'; // Xanh lá
+                ctx.fillStyle = '#10b981';
                 ctx.fillRect(x + 10, y + 18, 10, 4);
             }
 
             // Chân Vẹt Pixel
             ctx.fillStyle = '#d97706';
             if (!parrot.isGrounded) {
-                // Chân co lên khi bay/nhảy
                 ctx.fillRect(x + 12, y + 24, 4, 4);
                 ctx.fillRect(x + 18, y + 24, 4, 4);
             } else {
-                // Chân chạy trên mặt đất
                 if (frame % 10 < 5) {
                     ctx.fillRect(x + 12, y + 24, 4, 8);
                     ctx.fillRect(x + 18, y + 24, 4, 4);
@@ -133,32 +131,32 @@
             }
         }
 
-        // Vẽ Xương rồng / Vật cản Pixel
+        // Vẽ Xương rồng Pixel
         function drawCactus(x, y, w, h) {
-            ctx.fillStyle = '#059669'; // Xanh lá đậm
+            ctx.fillStyle = '#059669';
             ctx.fillRect(x + 6, y, 8, h);
             ctx.fillRect(x, y + 8, 20, 6);
             ctx.fillRect(x, y + 4, 4, 8);
             ctx.fillRect(x + 16, y + 4, 4, 8);
         }
 
-        // Vẽ Hà Mã Pixel Art (Được mặc áo màu cam tươi sáng)
+        // Vẽ Hà Mã Pixel Art (Mặc áo màu cam)
         function drawHippo(x, y, w, h) {
             // Thân hà mã (Tím xám)
             ctx.fillStyle = '#6b7280';
-            ctx.fillRect(x + 4, y + 4, 28, 20); // Thân chính
+            ctx.fillRect(x + 4, y + 4, 28, 20);
 
-            // Áo màu cam tươi sáng cho hà mã
-            ctx.fillStyle = '#f97316'; // Cam rực rỡ
-            ctx.fillRect(x + 10, y + 6, 20, 16); // Thân áo
-            ctx.fillStyle = '#fdba74'; // Viền/họa tiết áo cam sáng
+            // Áo màu cam tươi sáng
+            ctx.fillStyle = '#f97316';
+            ctx.fillRect(x + 10, y + 6, 20, 16);
+            ctx.fillStyle = '#fdba74';
             ctx.fillRect(x + 14, y + 8, 4, 12);
 
             // Đầu & Mõm hà mã
             ctx.fillStyle = '#6b7280';
-            ctx.fillRect(x, y + 10, 12, 12); // Mũi/mõm
+            ctx.fillRect(x, y + 10, 12, 12);
             ctx.fillStyle = '#9ca3af';
-            ctx.fillRect(x + 2, y + 12, 4, 4); // Lỗ mũi pixel
+            ctx.fillRect(x + 2, y + 12, 4, 4);
 
             // Tai hà mã
             ctx.fillStyle = '#4b5563';
@@ -176,17 +174,51 @@
             ctx.fillRect(x + 22, y + 22, 6, 6);
         }
 
+        // Vẽ Con Bò Pixel Art
+        function drawCow(x, y, frame) {
+            // Thân bò (Trắng đốm đen)
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(x + 4, y + 4, 22, 16);
+
+            // Đốm đen
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(x + 8, y + 6, 6, 6);
+            ctx.fillRect(x + 18, y + 10, 5, 5);
+
+            // Đầu bò & Mõm hồng
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(x, y + 2, 8, 12);
+            ctx.fillStyle = '#f472b6';
+            ctx.fillRect(x - 2, y + 8, 6, 6);
+
+            // Mắt & Sừng
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(x + 2, y + 4, 2, 2);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(x + 4, y - 2, 2, 4);
+
+            // Chân bò phi nước đại
+            ctx.fillStyle = '#334155';
+            if (Math.floor(frame / 4) % 2 === 0) {
+                ctx.fillRect(x + 4, y + 20, 4, 6);
+                ctx.fillRect(x + 18, y + 20, 4, 6);
+            } else {
+                ctx.fillRect(x + 8, y + 20, 4, 6);
+                ctx.fillRect(x + 14, y + 20, 4, 6);
+            }
+        }
+
         // Vẽ Đạn Nước Pixel
         function drawWaterBullet(x, y) {
-            ctx.fillStyle = '#38bdf8'; // Xanh nước biển sáng
+            ctx.fillStyle = '#38bdf8';
             ctx.fillRect(x, y, 10, 6);
             ctx.fillStyle = '#60a5fa';
             ctx.fillRect(x + 2, y + 1, 6, 4);
-            ctx.fillStyle = '#ffffff'; // Điểm sáng hạt nước
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(x + 6, y + 2, 2, 2);
         }
 
-        // Xử lý thao tác Nhảy / Vỗ cánh
+        // Thao tác Nhảy / Vỗ cánh
         function jump() {
             if (parrot.isGrounded && !gameOver) {
                 parrot.dy = parrot.jumpPower;
@@ -211,9 +243,19 @@
 
         function spawnObstacle() {
             const randomGap = Math.floor(Math.random() * 60);
-            const isHippo = Math.random() < 0.45; // 45% xuất hiện Hà mã
+            const rand = Math.random();
             
-            if (isHippo) {
+            if (score > 80 && rand < 0.25) {
+                // Đàn 5 con bò chạy
+                obstacles.push({
+                    type: 'cow_herd',
+                    x: canvas.width + randomGap,
+                    y: 144,
+                    width: 140,
+                    height: 26,
+                    cowCount: 5
+                });
+            } else if (rand < 0.6) {
                 obstacles.push({
                     type: 'hippo',
                     x: canvas.width + randomGap,
@@ -238,7 +280,6 @@
 
             frameCount++;
             
-            // Xuất hiện vật cản ngẫu nhiên
             if (frameCount % Math.max(45, 85 - Math.floor(score / 50)) === 0) {
                 spawnObstacle();
             }
@@ -253,15 +294,13 @@
                 parrot.isGrounded = true;
             }
 
-            // Tăng tốc độ game theo điểm
             gameSpeed = 5 + Math.floor(score / 100) * 0.5;
 
-            // Xử lý di chuyển vật cản & Hà mã bắn đạn nước
+            // Di chuyển vật cản & Hà mã bắn đạn nước
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
                 obs.x -= gameSpeed;
 
-                // Hà mã bắn ra đạn nước khi vào phạm vi khoảng cách
                 if (obs.type === 'hippo' && !obs.hasShot && obs.x < canvas.width - 80) {
                     obs.hasShot = true;
                     bullets.push({
@@ -273,7 +312,7 @@
                     });
                 }
 
-                // Hitbox va chạm với vật cản
+                // Hitbox va chạm
                 if (
                     parrot.x + 4 < obs.x + obs.width &&
                     parrot.x + parrot.width - 4 > obs.x &&
@@ -289,7 +328,6 @@
                     }
                 }
 
-                // Tăng điểm khi vượt qua vật cản
                 if (obs.x + obs.width < 0) {
                     obstacles.splice(i, 1);
                     score += 10;
@@ -297,12 +335,11 @@
                 }
             }
 
-            // Xử lý đạn nước & va chạm với vẹt
+            // Xử lý đạn nước
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let bullet = bullets[i];
                 bullet.x -= bullet.speed;
 
-                // Hitbox va chạm đạn nước với vẹt
                 if (
                     parrot.x + 4 < bullet.x + bullet.width &&
                     parrot.x + parrot.width - 4 > bullet.x &&
@@ -318,7 +355,6 @@
                     }
                 }
 
-                // Xóa đạn khi ra khỏi màn hình
                 if (bullet.x + bullet.width < 0) {
                     bullets.splice(i, 1);
                 }
@@ -328,43 +364,45 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Bầu trời đêm sinh động có sao & mây
-            ctx.fillStyle = '#38bdf8'; // Mây/sao nhạt
+            // Bầu trời
+            ctx.fillStyle = '#38bdf8';
             for (let i = 0; i < canvas.width; i += 90) {
                 let cloudX = (i - (frameCount * 0.5) % canvas.width + canvas.width) % canvas.width;
                 ctx.fillRect(cloudX, 30, 24, 6);
                 ctx.fillRect(cloudX + 6, 24, 12, 6);
             }
 
-            // Vẽ Mặt đất Pixel nhiều màu tươi sáng
-            ctx.fillStyle = '#f59e0b'; // Đường gờ màu vàng cam
+            // Mặt đất
+            ctx.fillStyle = '#f59e0b';
             ctx.fillRect(0, 168, canvas.width, 4);
             ctx.fillStyle = '#334155';
             ctx.fillRect(0, 172, canvas.width, 48);
 
-            // Vẽ đốm đất cuộn theo tốc độ (Nhiều màu nổi bật)
             for (let i = 0; i < canvas.width; i += 40) {
                 let dotX = (i - (frameCount * gameSpeed) % 40 + canvas.width) % canvas.width;
-                ctx.fillStyle = '#38bdf8'; // Xanh ngọc
+                ctx.fillStyle = '#38bdf8';
                 ctx.fillRect(dotX, 182, 6, 2);
-                ctx.fillStyle = '#ec4899'; // Hồng tươi
+                ctx.fillStyle = '#ec4899';
                 ctx.fillRect((dotX + 20) % canvas.width, 196, 4, 2);
             }
 
-            // Vẽ Vẹt & Vật cản
+            // Vẽ Nhân vật & Vật cản
             drawPixelParrot(parrot.x, parrot.y, frameCount);
             obstacles.forEach(obs => {
                 if (obs.type === 'hippo') {
                     drawHippo(obs.x, obs.y, obs.width, obs.height);
+                } else if (obs.type === 'cow_herd') {
+                    for (let c = 0; c < obs.cowCount; c++) {
+                        drawCow(obs.x + c * 26, obs.y, frameCount + c * 3);
+                    }
                 } else {
                     drawCactus(obs.x, obs.y, obs.width, obs.height);
                 }
             });
 
-            // Vẽ đạn nước
             bullets.forEach(b => drawWaterBullet(b.x, b.y));
 
-            // Hiển thị màn hình Game Over
+            // Hiển thị Màn hình Game Over
             if (gameOver) {
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -374,11 +412,12 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 25);
                 
-                // Cập nhật câu nói tùy theo lý do thua
                 ctx.fillStyle = '#f59e0b';
                 ctx.font = 'bold 15px monospace';
                 if (gameOverCause === 'bullet') {
                     ctx.fillText('💦 Đúng là con vẹt vẹt! 💦', canvas.width / 2, canvas.height / 2 + 2);
+                } else if (gameOverCause === 'cow_herd') {
+                    ctx.fillText('🐮 Bị cả đàn bò dẫm bẹt dí! 🐮', canvas.width / 2, canvas.height / 2 + 2);
                 } else {
                     ctx.fillText('😭 Con vẹt khổ nhất thế giới! 😭', canvas.width / 2, canvas.height / 2 + 2);
                 }
@@ -409,7 +448,6 @@
             scoreText.innerText = '0';
         }
 
-        // Bắt đầu vòng lặp game
         gameLoop();
     </script>
 </body>
